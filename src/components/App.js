@@ -1,58 +1,59 @@
 import React, { Component } from 'react';
 import axios from 'axios';
+import Organization from './Organization';
 
 // Services: Inicializar Axios para después usarlo en las consultas a las API
 const axiosGitHubGraphQL = axios.create({
 	baseURL: 'https://api.github.com/graphql',
 	headers: {
-		Authorization: 'bearer d91c031e61ef56398a404ba7b8287ba25a2746f2',
+		Authorization: 'bearer 9ec5b606f9c9b7af22020ae3df4d84cf06ebbb48',
 	},
 });
 
 // ***** Queries *****
-const GET_ORGANIZATION = `
-  {
-    organization(login: "the-road-to-learn-react") {
-      name
-      url
-    }
-  }
-`;
+// const GET_ORGANIZATION = `
+//   {
+//     organization(login: "the-road-to-learn-react") {
+//       name
+//       url
+//     }
+//   }
+// `;
 
-const GET_REPOSITORY_OF_ORGANIZATION = `
-  {
-    organization(login: "the-road-to-learn-react") {
-      name
-      url
-      repository(name: "the-road-to-learn-react") {
-        name
-        url
-      }
-    }
-  }
-`;
+// const GET_REPOSITORY_OF_ORGANIZATION = `
+//   {
+//     organization(login: "the-road-to-learn-react") {
+//       name
+//       url
+//       repository(name: "the-road-to-learn-react") {
+//         name
+//         url
+//       }
+//     }
+//   }
+// `;
 
-const getIssuesOfRepositoryQuery = (primerparam, segundoparam) => `
-  {
-    organization(login: "${primerparam}") {
-      name
-      url
-      repository(name: "${segundoparam}") {
-        name
-        url
-        issues(last: 5) {
-          edges {
-            node {
-              id
-              title
-              url
-            }
-          }
-        }
-      }
-    }
-  }
-`;
+// const getIssuesOfRepositoryQuery = (primerparam, segundoparam) => `
+//   {
+//     organization(login: "${primerparam}") {
+//       name
+//       url
+//       repository(name: "${segundoparam}") {
+//         name
+//         url
+//         issues(last: 5) {
+//           edges {
+//             node {
+//               id
+//               title
+//               url
+//             }
+//           }
+//         }
+//       }
+//     }
+//   }
+// `;
 
 const GET_ISSUES_OF_REPOSITORY = `
   query ($organization: String!, $repository: String!, $cursor: String) {
@@ -156,7 +157,6 @@ const resolveIssuesQuery = (queryResult, cursor) => (state) => {
 
 const resolveAddStarMutation = (mutationResult) => (state) => {
 	const { viewerHasStarred } = mutationResult.data.data.addStar.starrable;
-	const { totalCount } = state.organization.repository.stargazers;
 
 	return {
 		...state,
@@ -171,7 +171,6 @@ const resolveAddStarMutation = (mutationResult) => (state) => {
 };
 // ***** END of Trozos de funciones específicas *****
 
-// ***** COMPONENTE APP *****
 class App extends Component {
 	state = {
 		path: 'the-road-to-learn-react/the-road-to-learn-react',
@@ -216,7 +215,7 @@ class App extends Component {
 		return (
 			<div>
 				<h1>GitHub's GraphQL API</h1>
-        <h2>React app with GraphQL GitHub Client</h2>
+				<h2>React app with GraphQL GitHub Client</h2>
 				<form onSubmit={this.onSubmit}>
 					<label htmlFor="url">Show open issues for https://github.com/</label>
 					<input
@@ -243,82 +242,5 @@ class App extends Component {
 		);
 	}
 }
-// ***** END of Componente App *****
-
-// ***** COMPONENTE ORGANIZATION *****
-const Organization = ({
-	organization,
-	errors,
-	onFetchMoreIssues,
-	onStarRepository,
-}) => {
-	if (errors) {
-		return (
-			<p>
-				<strong>Something went wrong:</strong>
-				{errors.map((error) => error.message).join(', and also ')}
-			</p>
-		);
-	}
-
-	return (
-		<div>
-			<p>
-				<strong>You have search the Organization: </strong>
-				<a href={organization.url}>{organization.name}</a>
-			</p>
-
-			<Repository
-				repository={organization.repository}
-				onFetchMoreIssues={onFetchMoreIssues}
-				onStarRepository={onStarRepository}
-			/>
-		</div>
-	);
-};
-// ***** END of Componente Organization *****
-
-// ***** COMPONENTE REPOSITORY *****
-const Repository = ({ repository, onFetchMoreIssues, onStarRepository }) => (
-	<div>
-		<p>
-			<strong>... and also its Repository: </strong>
-			<a href={repository.url}>{repository.name}</a>
-		</p>
-		<button
-			type="button"
-			onClick={() =>
-				onStarRepository(repository.id, repository.viewerHasStarred)
-			}
-		>
-			This repository has <strong>{repository.stargazers.totalCount} stars</strong> - Do you want
-			to
-			<strong>{repository.viewerHasStarred ? ' unstar it' : ' star it'}</strong> ?
-		</button>
-		<p>
-			<strong>... which has the next Issues:</strong>
-		</p>
-		<ul>
-			{repository.issues.edges.map((issue) => (
-				<li key={issue.node.id}>
-					<a href={issue.node.url}>{issue.node.title}</a>
-
-					<ul>
-						{issue.node.reactions.edges.map((reaction) => (
-							<li key={reaction.node.id}>{reaction.node.content}</li>
-						))}
-					</ul>
-				</li>
-			))}
-		</ul>
-
-		<hr />
-
-		{repository.issues.pageInfo.hasNextPage && (
-			<button onClick={onFetchMoreIssues}>Load more issues</button>
-		)}
-	</div>
-);
-// ***** END of Componente Repository *****
 
 export default App;
